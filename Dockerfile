@@ -181,32 +181,32 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
-ENV OVT_VERSION 10.0.0-3000743
+#ENV OVT_VERSION 10.0.0-3000743
 
-RUN curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/archive/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /
+#RUN curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/archive/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /
 
 # Compile user space components, we're no longer building kernel module as we're
 # now bundling FUSE shared folders support.
-RUN cd /open-vm-tools && \
-    autoreconf -i && \
-    ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
-                --without-kernel-modules --without-procps --without-gtk2 \
-                --without-gtkmm --without-pam --without-x --without-icu \
-                --without-xerces --without-xmlsecurity --without-ssl && \
-    make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
-    make DESTDIR=$ROOTFS install &&\
-    /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
+#RUN cd /open-vm-tools && \
+#    autoreconf -i && \
+#    ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
+#                --without-kernel-modules --without-procps --without-gtk2 \
+#                --without-gtkmm --without-pam --without-x --without-icu \
+#                --without-xerces --without-xmlsecurity --without-ssl && \
+#    make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
+#    make DESTDIR=$ROOTFS install &&\
+#    /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
 
 # Building the Libdnet library for VMware Tools.
-ENV LIBDNET libdnet-1.12
-RUN curl -fL -o /tmp/${LIBDNET}.zip https://github.com/dugsong/libdnet/archive/${LIBDNET}.zip &&\
-    unzip /tmp/${LIBDNET}.zip -d /vmtoolsd &&\
-    cd /vmtoolsd/libdnet-${LIBDNET} && ./configure --build=i486-pc-linux-gnu &&\
-    make &&\
-    make install && make DESTDIR=$ROOTFS install
+#ENV LIBDNET libdnet-1.12
+#RUN curl -fL -o /tmp/${LIBDNET}.zip https://github.com/dugsong/libdnet/archive/${LIBDNET}.zip &&\
+#    unzip /tmp/${LIBDNET}.zip -d /vmtoolsd &&\
+#    cd /vmtoolsd/libdnet-${LIBDNET} && ./configure --build=i486-pc-linux-gnu &&\
+#    make &&\
+#    make install && make DESTDIR=$ROOTFS install
 
 # Horrible hack again
-RUN cd $ROOTFS && cd usr/local/lib && ln -s libdnet.1 libdumbnet.so.1
+#RUN cd $ROOTFS && cd usr/local/lib && ln -s libdnet.1 libdumbnet.so.1
 
 # Download and build Parallels Tools
 ENV PRL_MAJOR 11
