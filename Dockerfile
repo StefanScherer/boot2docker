@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM 32bit/debian:jessie
 
 RUN apt-get update && apt-get -y install  unzip \
                         xz-utils \
