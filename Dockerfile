@@ -209,31 +209,31 @@ RUN apt-get update && apt-get install -y \
 #RUN cd $ROOTFS && cd usr/local/lib && ln -s libdnet.1 libdumbnet.so.1
 
 # Download and build Parallels Tools
-ENV PRL_MAJOR 11
-ENV PRL_VERSION 11.1.0
-ENV PRL_BUILD 32202
+#ENV PRL_MAJOR 11
+#ENV PRL_VERSION 11.1.0
+#ENV PRL_BUILD 32202
 
-RUN mkdir -p /prl_tools && \
-    curl -fL http://download.parallels.com/desktop/v${PRL_MAJOR}/${PRL_VERSION}/ParallelsTools-${PRL_VERSION}-${PRL_BUILD}-boot2docker.tar.gz \
-        | tar -xzC /prl_tools --strip-components 1 &&\
-    cd /prl_tools &&\
-    cp -Rv tools/* $ROOTFS &&\
-    \
-    KERNEL_DIR=/linux-kernel/ KVER=$KERNEL_VERSION SRC=/linux-kernel/ PRL_FREEZE_SKIP=1 \
-    make -C kmods/ -f Makefile.kmods installme &&\
-    \
-    find kmods/ -name \*.ko -exec cp {} $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ \;
+#RUN mkdir -p /prl_tools && \
+#    curl -fL http://download.parallels.com/desktop/v${PRL_MAJOR}/${PRL_VERSION}/ParallelsTools-${PRL_VERSION}-${PRL_BUILD}-boot2docker.tar.gz \
+#        | tar -xzC /prl_tools --strip-components 1 &&\
+#    cd /prl_tools &&\
+#    cp -Rv tools/* $ROOTFS &&\
+#    \
+#    KERNEL_DIR=/linux-kernel/ KVER=$KERNEL_VERSION SRC=/linux-kernel/ PRL_FREEZE_SKIP=1 \
+#    make -C kmods/ -f Makefile.kmods installme &&\
+#    \
+#    find kmods/ -name \*.ko -exec cp {} $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ \;
 
 # Build XenServer Tools
-ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
-ENV XEN_BRANCH boot2docker
-ENV XEN_COMMIT 4a9417fa61a5ca46676b7073fdb9181fe77ba56e
+#ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
+#ENV XEN_BRANCH boot2docker
+#ENV XEN_COMMIT 4a9417fa61a5ca46676b7073fdb9181fe77ba56e
 
-RUN git clone -b "$XEN_BRANCH" "$XEN_REPO" /xentools \
-    && cd /xentools \
-    && git checkout -q "$XEN_COMMIT" \
-    && make \
-    && tar xvf build/dist/*.tgz -C $ROOTFS/
+#RUN git clone -b "$XEN_BRANCH" "$XEN_REPO" /xentools \
+#    && cd /xentools \
+#    && git checkout -q "$XEN_COMMIT" \
+#    && make \
+#    && tar xvf build/dist/*.tgz -C $ROOTFS/
 
 # Make sure that all the modules we might have added are recognized (especially VBox guest additions)
 RUN depmod -a -b $ROOTFS $KERNEL_VERSION-boot2docker
