@@ -12,4 +12,16 @@ after_script:
   - docker images
   - ls -l *.iso
 
+deploy:
+  provider: releases
+  api_key:
+    secure: "IkaCxh/PSYKvxqFmAxB1jATrIUEJyFMpHJhTyj23ugRWf0PbzcVnKuhXAh9Uok7BegyzW/Yd06ui6Aersz/Qn+NMrdykCzSLwM+W9kkA2RKG49AzZWCF5dHC+j/3GIW9BaPcRy4avHccSTXmvEeBAVVODBLBQmmUFa45KsMijgFp4GVJRCjf4R9lcQT8L6U+oR+DkHG1JpByLWGLnKG/fe422tcwALM1+ZJp02v8xHRtWdIEk9Ry77r6McK42tZ9GKRnqBSccVjaFlKN9ufowBLYByvHYjPHgM/Tru9AC+0xS8QBF3UbnZeh3br7QUos7Hf4httDIKuNQQxjTm/XCq9J5+YvilZrIfwZm17UdQa69KQDlAqJhv9VjMK/NHmtQt94epyOgumovmjWN7EZ3OQGSWeVb2Qrz872ijm/RZvfpBR7ffzu2B1lsP8okADEpIy21r8Ko2si32rUV1TULBwDsTSx86ToXVMJPdCXLZNVE45G0XZdAIkJuqsS219aQ74JnvPxa6OtsQfdgyIAJYCrZE+TPMvhbbk3uqdHcBJlppxpUvl21q0R4urFCSJvaUGx6Xg/UtWfaqCp0MLgCwmgKMxSnUsOLUryg1Ry9hC8QgR2j4C3Zp83GAyN4WCv1uMGEVKZ0d7+hab9f9ID8XShBXo3QHsciKNWU6ItmIo="
+  file:
+    - boot2docker.iso
+  skip_cleanup: true
+  on:
+    tags: true
+    repo: StefanScherer/boot2docker
+    all_branches: true
+
 # vim:set et ts=2 sw=2:

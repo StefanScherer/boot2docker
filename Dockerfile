@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM 32bit/debian:jessie
 
 RUN apt-get update && apt-get -y install  unzip \
                         xz-utils \
@@ -61,7 +61,7 @@ RUN jobs=$(nproc); \
 # The post kernel build process
 
 ENV ROOTFS          /rootfs
-ENV TCL_REPO_BASE   http://tinycorelinux.net/6.x/x86_64
+ENV TCL_REPO_BASE   http://tinycorelinux.net/6.x/x86
 # Note that the ncurses is here explicitly so that top continues to work
 ENV TCZ_DEPS        iptables \
                     iproute2 \
@@ -112,7 +112,7 @@ RUN curl -fL http://http.debian.net/debian/pool/main/libc/libcap2/libcap2_2.22.o
     mkdir -p output && \
     make prefix=`pwd`/output install && \
     mkdir -p $ROOTFS/usr/local/lib && \
-    cp -av `pwd`/output/lib64/* $ROOTFS/usr/local/lib
+    cp -av `pwd`/output/lib/* $ROOTFS/usr/local/lib
 
 # Make sure the kernel headers are installed for aufs-util, and then build it
 RUN cd /linux-kernel && \
@@ -126,10 +126,10 @@ RUN cd /linux-kernel && \
     rm -rf /tmp/kheaders
 
 # Prepare the ISO directory with the kernel
-RUN cp -v /linux-kernel/arch/x86_64/boot/bzImage /tmp/iso/boot/vmlinuz64
+RUN cp -v /linux-kernel/arch/x86/boot/bzImage /tmp/iso/boot/vmlinuz
 
 # Download the rootfs, don't unpack it though:
-RUN curl -fL -o /tcl_rootfs.gz $TCL_REPO_BASE/release/distribution_files/rootfs64.gz
+RUN curl -fL -o /tcl_rootfs.gz $TCL_REPO_BASE/release/distribution_files/rootfs.gz
 
 # Install the TCZ dependencies
 RUN for dep in $TCZ_DEPS; do \
@@ -140,11 +140,12 @@ RUN for dep in $TCZ_DEPS; do \
     done
 
 # get generate_cert
-RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowideit/generate_cert/releases/download/0.2/generate_cert-0.2-linux-amd64 && \
+RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowideit/generate_cert/releases/download/0.1/generate_cert-0.1-linux-386 && \
     chmod +x $ROOTFS/usr/local/bin/generate_cert
 
 # Build VBox guest additions
 ENV VBOX_VERSION 5.0.14
+ENV VBOX_VERSION 5.0.12
 RUN mkdir -p /vboxguest && \
     cd /vboxguest && \
     \
@@ -153,16 +154,16 @@ RUN mkdir -p /vboxguest && \
     rm vboxguest.iso && \
     \
     sh VBoxLinuxAdditions.run --noexec --target . && \
-    mkdir amd64 && tar -C amd64 -xjf VBoxGuestAdditions-amd64.tar.bz2 && \
+    mkdir x86 && tar -C x86 -xjf VBoxGuestAdditions-x86.tar.bz2 && \
     rm VBoxGuestAdditions*.tar.bz2 && \
     \
-    KERN_DIR=/linux-kernel/ make -C amd64/src/vboxguest-${VBOX_VERSION} && \
-    cp amd64/src/vboxguest-${VBOX_VERSION}/*.ko $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ && \
+    KERN_DIR=/linux-kernel/ BUILD_TARGET_ARCH=x86 make -C x86/src/vboxguest-${VBOX_VERSION} && \
+    cp x86/src/vboxguest-${VBOX_VERSION}/*.ko $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ && \
     \
     mkdir -p $ROOTFS/sbin && \
-    cp amd64/lib/VBoxGuestAdditions/mount.vboxsf amd64/sbin/VBoxService $ROOTFS/sbin/ && \
+    cp x86/lib/VBoxGuestAdditions/mount.vboxsf x86/sbin/VBoxService $ROOTFS/sbin/ && \
     mkdir -p $ROOTFS/bin && \
-    cp amd64/bin/VBoxClient amd64/bin/VBoxControl $ROOTFS/bin/
+    cp x86/bin/VBoxClient x86/bin/VBoxControl $ROOTFS/bin/
 
 # Install build dependencies for VMware Tools
 RUN apt-get update && apt-get install -y \
@@ -181,60 +182,59 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
-ENV OVT_VERSION 10.0.0-3000743
+#ENV OVT_VERSION 10.0.0-3000743
 
-RUN curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/archive/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /
+#RUN curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/archive/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /
 
 # Compile user space components, we're no longer building kernel module as we're
 # now bundling FUSE shared folders support.
-RUN cd /open-vm-tools && \
-    autoreconf -i && \
-    ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
-                --without-kernel-modules --without-procps --without-gtk2 \
-                --without-gtkmm --without-pam --without-x --without-icu \
-                --without-xerces --without-xmlsecurity --without-ssl && \
-    make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
-    make DESTDIR=$ROOTFS install &&\
-    /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
+#RUN cd /open-vm-tools && \
+#    autoreconf -i && \
+#    ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
+#                --without-kernel-modules --without-procps --without-gtk2 \
+#                --without-gtkmm --without-pam --without-x --without-icu \
+#                --without-xerces --without-xmlsecurity --without-ssl && \
+#    make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
+#    make DESTDIR=$ROOTFS install &&\
+#    /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
 
 # Building the Libdnet library for VMware Tools.
-ENV LIBDNET libdnet-1.12
-RUN curl -fL -o /tmp/${LIBDNET}.zip https://github.com/dugsong/libdnet/archive/${LIBDNET}.zip &&\
-    unzip /tmp/${LIBDNET}.zip -d /vmtoolsd &&\
-    cd /vmtoolsd/libdnet-${LIBDNET} && ./configure --build=i486-pc-linux-gnu &&\
-    make &&\
-    make install && make DESTDIR=$ROOTFS install
+#ENV LIBDNET libdnet-1.12
+#RUN curl -fL -o /tmp/${LIBDNET}.zip https://github.com/dugsong/libdnet/archive/${LIBDNET}.zip &&\
+#    unzip /tmp/${LIBDNET}.zip -d /vmtoolsd &&\
+#    cd /vmtoolsd/libdnet-${LIBDNET} && ./configure --build=i486-pc-linux-gnu &&\
+#    make &&\
+#    make install && make DESTDIR=$ROOTFS install
 
 # Horrible hack again
-RUN cd $ROOTFS && cd usr/local/lib && ln -s libdnet.1 libdumbnet.so.1 &&\
-    cd $ROOTFS && ln -s lib lib64
+#RUN cd $ROOTFS && cd usr/local/lib && ln -s libdnet.1 libdumbnet.so.1
 
 # Download and build Parallels Tools
-ENV PRL_MAJOR 11
-ENV PRL_VERSION 11.1.0
-ENV PRL_BUILD 32202
+#ENV PRL_MAJOR 11
+#ENV PRL_VERSION 11.1.0
+#ENV PRL_BUILD 32202
 
-RUN mkdir -p /prl_tools && \
-    curl -fL http://download.parallels.com/desktop/v${PRL_MAJOR}/${PRL_VERSION}/ParallelsTools-${PRL_VERSION}-${PRL_BUILD}-boot2docker.tar.gz \
-        | tar -xzC /prl_tools --strip-components 1 &&\
-    cd /prl_tools &&\
-    cp -Rv tools/* $ROOTFS &&\
-    \
-    KERNEL_DIR=/linux-kernel/ KVER=$KERNEL_VERSION SRC=/linux-kernel/ PRL_FREEZE_SKIP=1 \
-    make -C kmods/ -f Makefile.kmods installme &&\
-    \
-    find kmods/ -name \*.ko -exec cp {} $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ \;
+#RUN mkdir -p /prl_tools && \
+#    curl -fL http://download.parallels.com/desktop/v${PRL_MAJOR}/${PRL_VERSION}/ParallelsTools-${PRL_VERSION}-${PRL_BUILD}-boot2docker.tar.gz \
+#        | tar -xzC /prl_tools --strip-components 1 &&\
+#    cd /prl_tools &&\
+#    cp -Rv tools/* $ROOTFS &&\
+#    \
+#    KERNEL_DIR=/linux-kernel/ KVER=$KERNEL_VERSION SRC=/linux-kernel/ PRL_FREEZE_SKIP=1 \
+#    make -C kmods/ -f Makefile.kmods installme &&\
+#    \
+#    find kmods/ -name \*.ko -exec cp {} $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ \;
 
 # Build XenServer Tools
-ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
-ENV XEN_BRANCH boot2docker
-ENV XEN_COMMIT 4a9417fa61a5ca46676b7073fdb9181fe77ba56e
+#ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
+#ENV XEN_BRANCH boot2docker
+#ENV XEN_COMMIT 4a9417fa61a5ca46676b7073fdb9181fe77ba56e
 
-RUN git clone -b "$XEN_BRANCH" "$XEN_REPO" /xentools \
-    && cd /xentools \
-    && git checkout -q "$XEN_COMMIT" \
-    && make \
-    && tar xvf build/dist/*.tgz -C $ROOTFS/
+#RUN git clone -b "$XEN_BRANCH" "$XEN_REPO" /xentools \
+#    && cd /xentools \
+#    && git checkout -q "$XEN_COMMIT" \
+#    && make \
+#    && tar xvf build/dist/*.tgz -C $ROOTFS/
 
 # Make sure that all the modules we might have added are recognized (especially VBox guest additions)
 RUN depmod -a -b $ROOTFS $KERNEL_VERSION-boot2docker
@@ -244,7 +244,7 @@ RUN cp -v $ROOTFS/etc/version /tmp/iso/version
 
 # Get the Docker version that matches our boot2docker version
 # Note: `docker version` returns non-true when there is no server to ask
-RUN curl -fL -o $ROOTFS/usr/local/bin/docker https://get.docker.com/builds/Linux/x86_64/docker-$(cat $ROOTFS/etc/version) && \
+RUN curl -fL -o $ROOTFS/usr/local/bin/docker https://github.com/StefanScherer/docker/releases/download/v$(cat $ROOTFS/etc/version)-386/docker-$(cat $ROOTFS/etc/version) && \
     chmod +x $ROOTFS/usr/local/bin/docker && \
     $ROOTFS/usr/local/bin/docker -v
 
