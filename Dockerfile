@@ -145,7 +145,6 @@ RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowid
 
 # Build VBox guest additions
 ENV VBOX_VERSION 5.0.12
-RUN ln -s /usr/include/linux/version.h /linux-kernel/include/linux/version.h
 RUN mkdir -p /vboxguest && \
     cd /vboxguest && \
     \
@@ -157,7 +156,7 @@ RUN mkdir -p /vboxguest && \
     mkdir x86 && tar -C x86 -xjf VBoxGuestAdditions-x86.tar.bz2 && \
     rm VBoxGuestAdditions*.tar.bz2 && \
     \
-    KERN_DIR=/linux-kernel/ make -C x86/src/vboxguest-${VBOX_VERSION} && \
+    KERN_DIR=/linux-kernel/ BUILD_TARGET_ARCH=x86 make -C x86/src/vboxguest-${VBOX_VERSION} && \
     cp x86/src/vboxguest-${VBOX_VERSION}/*.ko $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ && \
     \
     mkdir -p $ROOTFS/sbin && \
